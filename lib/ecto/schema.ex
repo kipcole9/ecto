@@ -503,7 +503,10 @@ defmodule Ecto.Schema do
         Ecto.Schema.__assocs__(assocs),
         Ecto.Schema.__embeds__(embeds),
         Ecto.Schema.__aliases__(@ecto_aliases),
+<<<<<<< 06af99cfefe205f713b2e8130048f710cf2ec336
         Ecto.Schema.__includes__(@ecto_includes),        
+=======
+>>>>>>> Adds schema support for inherited tables.
         Ecto.Schema.__read_after_writes__(@ecto_raw),
         Ecto.Schema.__autogenerate__(@ecto_autogenerate_id, autogenerate, autoupdate)]
     end

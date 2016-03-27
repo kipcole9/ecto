@@ -990,6 +990,7 @@ if Code.ensure_loaded?(Postgrex) do
           quote_table(String.split(name, '.'))
         true ->
           <<?", name::binary, ?">>
+<<<<<<< 06af99cfefe205f713b2e8130048f710cf2ec336
       end
     end
 
@@ -1039,6 +1040,8 @@ if Code.ensure_loaded?(Postgrex) do
         String.replace(column, "%{table}", name)
       else
         "#{name}.#{quote_name(field)}"
+=======
+>>>>>>> Adds schema support for inherited tables.
       end
     end
 
