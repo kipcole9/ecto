@@ -249,4 +249,9 @@ defmodule Ecto.Adapters.Postgres do
     args = args ++ opt_args
     System.cmd(cmd, args, env: env, stderr_to_stdout: true)
   end
+  
+  @doc false
+  def supports_inherited_tables? do
+    true
+  end
 end

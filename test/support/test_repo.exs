@@ -78,8 +78,22 @@ defmodule Ecto.TestAdapter do
   def update(_repo, %{context: {:invalid, _}=res}, [_|_], _filters, _return, _opts),
     do: res
 
+<<<<<<< e4e8fe8d16b596d0f72764e2b84d91b35706c943
   def delete(_repo, meta, _filter, _opts),
     do: send(self(), {:delete, meta.source}) && {:ok, []}
+=======
+  def delete(_repo, _model_meta, _filter, _opts),
+    do: send(self(), :delete) && {:ok, []}
+>>>>>>> Adds inherited table support for Ecto migrations.
+
+  def primary_keys_from(table),
+    do: Ecto.Adapters.Postgres.Connection.primary_keys_from(table)
+
+  def index_definitions_from(table),
+    do: Ecto.Adapters.Postgres.Connection.index_definitions_from(table)
+
+  def trigger_definitions_from(table),
+    do: Ecto.Adapters.Postgres.Connection.trigger_definitions_from(table)
 
   ## Transactions
 
@@ -101,10 +115,33 @@ defmodule Ecto.TestAdapter do
     throw {:ecto_rollback, value}
   end
 
+  ## Inheritance Queries
+  @trigger """
+    CREATE TRIGGER tsvector_update
+    BEFORE INSERT OR UPDATE OF name, description, tags, search_language
+    ON things
+    FOR EACH ROW EXECUTE PROCEDURE things_search_trigger()
+  """
+  @index "CREATE UNIQUE INDEX things_index ON things USING btree (id)"
+  def query(_repo, sql, _params, _opts) do
+    cond do
+      sql =~ "SELECT a.attname::varchar" ->
+        {:ok, %{rows: [[:id]]}}
+      sql =~ "pg_get_indexdef" ->
+        {:ok, %{rows: [[@index]]}}
+      sql =~ "pg_get_triggerdef" ->
+        {:ok, %{rows: [[@trigger |> remove_newlines]]}}
+    end
+  end
+
   ## Migrations
 
   def supports_ddl_transaction? do
     Process.get(:supports_ddl_transaction?) || false
+  end
+
+  def supports_inherited_tables? do
+    Process.get(:supports_inherited_tables?) || false
   end
 
   def execute_ddl(_repo, command, _) do
@@ -115,12 +152,17 @@ defmodule Ecto.TestAdapter do
   defp migrated_versions do
     Process.get(:migrated_versions) || []
   end
+
+  defp remove_newlines(string) do
+    string |> String.strip |> String.replace("\n", " ") |> String.replace(~r" +"," ")
+  end
 end
 
 Application.put_env(:ecto, Ecto.TestRepo, [user: "invalid"])
 
 defmodule Ecto.TestRepo do
   use Ecto.Repo, otp_app: :ecto, adapter: Ecto.TestAdapter
+
 end
 
 Ecto.TestRepo.start_link(url: "ecto://user:pass@local/hello")

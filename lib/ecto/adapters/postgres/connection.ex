@@ -593,10 +593,12 @@ if Code.ensure_loaded?(Postgrex) do
         nil -> ""
         pk -> ", #{pk}"
       end
+      inherits = if table.inherits, do: " INHERITS (#{inherits(table.prefix, table.inherits)})", else: ""
 
       queries = ["CREATE TABLE" <> if_not_exists <>
         " #{quote_table(table.prefix, table.name)}" <>
-        " (#{column_definitions(table, columns)}#{pk_definition})" <> options]
+        " (#{column_definitions(table, columns)}#{pk_definition})" <>
+        "#{inherits}" <> options]
 
       queries = add_comment(queries, comment_on(:table, table.name, table.comment))
 
@@ -680,6 +682,24 @@ if Code.ensure_loaded?(Postgrex) do
     def execute_ddl(keyword) when is_list(keyword),
       do: error!(nil, "PostgreSQL adapter does not support keyword lists in execute")
 
+    # Primary key definitions.  If the table is inherited the defailt is to
+    # define the primary key as the same columns as the inherited table.
+    defp pk_definition(%Table{}=table, columns),
+      do: pk_definition(table, table.inherits, columns)
+
+    defp pk_definition(%Table{}=table, inherits, columns) when is_atom(inherits),
+      do: pk_definition(inherited_primary_keys(table) ++ columns)
+
+    defp pk_definition(%Table{}=table, inherits, columns) when is_list(inherits) do
+      [_inherited_table | options] = inherits
+      case Keyword.get(options, :primary_keys, true) do
+        true ->
+          pk_definition(inherited_primary_keys(table) ++ columns)
+        false ->
+          pk_definition(columns)
+      end
+    end
+
     defp pk_definition(columns) do
       pks =
         for {_, name, _, opts} <- columns,
@@ -694,7 +714,6 @@ if Code.ensure_loaded?(Postgrex) do
 
     defp add_comment([query], ""), do: query
     defp add_comment(queries, comment), do: queries ++ [comment]
-
 
     defp comment_on(_database_object, _name, nil), do:  ""
     defp comment_on(:column, {table_name, column_name}, comment) do
@@ -723,6 +742,13 @@ if Code.ensure_loaded?(Postgrex) do
         _ -> ""
       end)
       |> Enum.filter(fn(value) -> value != "" end)
+
+    defp prepend_comma_if_columns(pk_def, []), do: pk_def
+    defp prepend_comma_if_columns("" = pk_def, _columns), do: pk_def
+    defp prepend_comma_if_columns(pk_def, _columns), do: ", " <> pk_def
+
+    defp inherited_primary_keys(%Table{}=table) do
+      Enum.map(table.inherited_primary_keys, fn (y) -> {:add, y, nil, [primary_key: true]} end)
     end
 
     defp column_definitions(table, columns) do
@@ -873,6 +899,63 @@ if Code.ensure_loaded?(Postgrex) do
     defp reference_on_update(:update_all), do: " ON UPDATE CASCADE"
     defp reference_on_update(_), do: ""
 
+    ## Metadata
+
+    def primary_keys_from(table_name) do
+      """
+        SELECT a.attname::varchar
+        FROM   pg_index i
+        JOIN   pg_attribute a ON a.attrelid = i.indrelid
+                              AND a.attnum = ANY(i.indkey)
+        WHERE  i.indrelid = #{single_quote(table_name)}::regclass
+        AND    i.indisprimary;
+      """
+    end
+    def primary_keys_from(nil, table_name),
+      do: primary_keys_from(table_name)
+    def primary_keys_from(prefix, table_name),
+      do: primary_keys_from(prefix <> "." <> table_name)
+
+    def index_definitions_from(table_name) do
+      """
+        SELECT
+          pg_get_indexdef(idx.indexrelid) AS index_definition
+        FROM pg_index AS idx
+          JOIN pg_class AS i
+            ON i.oid = idx.indexrelid
+          JOIN pg_am AS am
+            ON i.relam = am.oid
+          JOIN pg_namespace AS NS ON i.relnamespace = NS.OID
+          JOIN pg_user AS U ON i.relowner = U.usesysid
+        WHERE idx.indisprimary = 'f'
+          AND idx.indrelid = #{single_quote(table_name)}::regclass
+      """
+    end
+    def index_definitions_from(nil, table_name),
+      do: index_definitions_from(table_name)
+    def index_definitions_from(prefix, table_name),
+      do: index_definitions_from(table_name) <> " AND ns.nspname = #{single_quote(prefix)}"
+
+    def trigger_definitions_from(table_name) do
+      """
+        SELECT pg_get_triggerdef(oid)
+        FROM pg_trigger
+        WHERE tgrelid = #{single_quote(table_name)}::regclass
+      """
+    end
+    def trigger_definitions_from(nil, table_name),
+      do: trigger_definitions_from(table_name)
+    def trigger_definitions_from(prefix, table_name),
+      do: trigger_definitions_from(prefix <> "." <> table_name)
+
+    def inherits(table_prefix, table_name) when is_atom(table_name),
+      do: quote_table(table_prefix, table_name)
+    def inherits(table_prefix, inherit) when is_list(inherit) do
+      [table_name | options] = inherit
+      prefix = Keyword.get(options, :prefix, table_prefix)
+      quote_table(prefix, table_name)
+    end
+
     ## Helpers
 
     defp get_source(query, sources, ix, source) do
@@ -903,6 +986,33 @@ if Code.ensure_loaded?(Postgrex) do
     end
 
     defp single_quote(value), do: "\'#{escape_string(value)}\'"
+    # Quote a table name for use in metadata look ups where the table name
+    # is part of a predicate
+    # defp single_quote(nil, name) do
+    #   single_quote(name)
+    # end
+    # defp single_quote(prefix, name) when is_atom(prefix) and is_atom(name) do
+    #   single_quote(Atom.to_string(prefix), Atom.to_string(name))
+    # end
+    # defp single_quote(prefix, name) do
+    #   single_quote(prefix <> "." <> name)
+    # end
+    # defp single_quote(name) when is_atom(name) do
+    #   single_quote(Atom.to_string(name))
+    # end
+    # defp single_quote(name) when is_binary(name) do
+    #   cond do
+    #     String.contains?(name, "\"") ->
+    #       error!(nil, "bad table name #{inspect name}")
+    #     true ->
+    #       <<?', name::binary, ?'>>
+    #   end
+    # end
+    # defp single_quote(name) when is_list(name) do
+    #   [table_name | options] = name
+    #   prefix = Keyword.get(options, :prefix, nil)
+    #   single_quote(prefix, table_name)
+    # end
 
     defp assemble(list) do
       list
