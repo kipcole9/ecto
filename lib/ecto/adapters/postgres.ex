@@ -272,4 +272,9 @@ defmodule Ecto.Adapters.Postgres do
     path = config[:dump_path] || Path.join(default, "structure.sql")
     run_with_cmd("psql", config, ["--quiet", "--file", path, config[:database]])
   end
+  
+  @doc false
+  def supports_inherited_tables? do
+    true
+  end
 end
