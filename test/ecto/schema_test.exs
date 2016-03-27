@@ -625,12 +625,20 @@ defmodule Ecto.SchemaTest do
     end
   end
   
+<<<<<<< 6bdb14575d06541baf8104ea7b5ec4284df1389e
   defmodule InheritAssocSchema do
+=======
+  defmodule InheritAssocModel do
+>>>>>>> Adds schema support for inherited tables.
     use Ecto.Schema
     
     @primary_key false
     schema "stuff" do
+<<<<<<< 6bdb14575d06541baf8104ea7b5ec4284df1389e
       include AssocSchema
+=======
+      include AssocModel
+>>>>>>> Adds schema support for inherited tables.
     end
   end
   
@@ -654,15 +662,26 @@ defmodule Ecto.SchemaTest do
   
   @tag :inheritance
   test "confirm associations are copied" do
+<<<<<<< 6bdb14575d06541baf8104ea7b5ec4284df1389e
     assert InheritAssocSchema.__schema__(:associations) == AssocSchema.__schema__(:associations)
+=======
+    assert InheritAssocModel.__schema__(:associations) == AssocModel.__schema__(:associations)
+>>>>>>> Adds schema support for inherited tables.
   end
   
   @tag :inheritance
   test "confirm association options are equal" do
+<<<<<<< 6bdb14575d06541baf8104ea7b5ec4284df1389e
     Enum.each InheritAssocSchema.__schema__(:associations), fn
       (assoc) ->
         orig = Map.delete(AssocSchema.__schema__(:association, assoc), :owner)
         inherit = Map.delete(InheritAssocSchema.__schema__(:association, assoc), :owner)
+=======
+    Enum.each InheritAssocModel.__schema__(:associations), fn
+      (assoc) ->
+        orig = Map.delete(AssocModel.__schema__(:association, assoc), :owner)
+        inherit = Map.delete(InheritAssocModel.__schema__(:association, assoc), :owner)
+>>>>>>> Adds schema support for inherited tables.
         assert orig == inherit
     end
   end

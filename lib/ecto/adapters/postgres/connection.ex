@@ -1069,6 +1069,26 @@ if Code.ensure_loaded?(Postgrex) do
       prefix = Keyword.get(options, :prefix, nil)
       single_quote(prefix, table_name)
     end
+    
+    defp field_or_alias(field, name, _sources, nil, _query) do
+      "#{name}.#{quote_name(field)}"
+    end
+    defp field_or_alias(field, name, sources, schema, query) do
+      alias Ecto.Query.Builder.Select, as: Builder
+      
+      if alias = schema.__schema__(:aliases)[field] do
+        {expr, {params, take}} = Builder.escape(alias, [], __ENV__)
+        if Enum.any?(params), do: raise ArgumentError, 
+            "Parameters in a schema column alias are not supported. " <>
+            "Field alias for #{field} found #{inspect params}"
+            
+        alias = expr(expr, sources, query)
+        column = "#{alias} AS #{quote_name(field)}"
+        String.replace(column, "%{table}", name)
+      else
+        "#{name}.#{quote_name(field)}"
+      end
+    end
 
     defp assemble(list) do
       list

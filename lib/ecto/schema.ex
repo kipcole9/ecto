@@ -1570,6 +1570,10 @@ defmodule Ecto.Schema do
         Module.put_attribute(mod, :ecto_aliases, {name, alias_for})
       end
 
+      if alias_for = opts[:alias_for] do
+        Module.put_attribute(mod, :ecto_aliases, {name, alias_for})
+      end
+
       if raw && gen do
         raise ArgumentError, "cannot mark the same field as autogenerate and read_after_writes"
       end
@@ -1791,13 +1795,13 @@ defmodule Ecto.Schema do
     Enum.each(from_module.__schema__(:fields), fn(field) ->
       type = from_module.__schema__(:type, field)
       Ecto.Schema.__field__(to_module, field, type, field_options_for(from_module, field))
-      if auto = List.keyfind(from_module.__schema__(:autogenerate), field, 0) do
+      if auto = List.keyfind(from_module.__schema__(:autogenerate, :insert), field, 0) do
         {_,_,autogen} = auto
-        Module.put_attribute(to_module, :ecto_autogenerate, {field, type, autogen})
+        Module.put_attribute(to_module, :ecto_autogenerate_insert, {field, type, autogen})
       end
-      if auto = List.keyfind(from_module.__schema__(:autoupdate), field, 0) do
+      if auto = List.keyfind(from_module.__schema__(:autogenerate, :update), field, 0) do
         {_,_,autogen} = auto
-        Module.put_attribute(to_module, :ecto_autoupdate, {field, type, autogen})
+        Module.put_attribute(to_module, :ecto_autogenerate_update, {field, type, autogen})
       end
     end)
   end
@@ -1860,9 +1864,6 @@ defmodule Ecto.Schema do
       def __schema__(:aliases), do: unquote(Macro.escape(aliases))
     end
   end
-<<<<<<< 4e815ac6747f2e36993beda90f4bac11f5117735
-
-=======
 
   # We need to find the field index of :_type so that when we're
   # populating the schema we can quickly establish what the _type
@@ -1876,7 +1877,6 @@ defmodule Ecto.Schema do
     end
   end
 
->>>>>>> Add Ecto.Query support for inherited tables.  Will determine the appropriate schema module on a per-row basis at query time.
   ## Private
 
   defp association(mod, cardinality, name, association, opts) do
