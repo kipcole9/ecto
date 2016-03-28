@@ -1007,7 +1007,7 @@ defmodule Ecto.Migration do
 
   def trigger_definitions_from(prefix, inherits) do
     trigger_query = adapter.trigger_definitions_from(prefix, inherits)
-    {:ok, trigger_definitions} = adapter.query(repo, trigger_query, [], log: false)
+    {:ok, trigger_definitions} = Ecto.Adapters.SQL.query(repo, trigger_query, [], log: false)
     trigger_definitions.rows |> List.flatten
   end
 end
