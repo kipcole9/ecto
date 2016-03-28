@@ -86,14 +86,48 @@ defmodule Ecto.Repo.Supervisor do
 
     Enum.reject(opts, fn {_k, v} -> is_nil(v) end)
   end
+  
+  # Builds a module and functions that allow us to map an Ecto schema source 
+  # (ie table name) back to its relevant schema module in support of inherited tables.
+  # There's no way to just get a list of the modules that are Ecto schemas so we iterate
+  # over all application modules to inspect them - which has the less than desirable
+  # side affect of loading all the application modules up front.
+  def build_source_map(otp_app) when is_atom(otp_app) do
+    {:ok, app_config} = Application.app_dir(otp_app) <> "/ebin/#{otp_app}.app" |> :file.consult
+    {:application, _app_name, config} = List.first(app_config)
+    build_source_map(Keyword.get(config, :modules))
+  end
+
+  def build_source_map(modules) when is_list(modules) do
+    map = 
+      modules
+      |> Enum.filter(fn(m) -> Keyword.get(m.__info__(:functions), :__schema__) end)
+      |> Enum.reject(fn(m) -> m in [Ecto.Schema, Ecto.Migration.SchemaMigration] end)
+      |> Enum.map(fn(m) -> 
+          "def schema_for_source(:#{m.__schema__(:source)}), do: #{m}" <>
+            if m.__schema__(:prefix) do 
+              "\ndef schema_for_source(:\"#{m.__schema__(:prefix)}.#{m.__schema__(:source)}\"), do: #{m}"
+            else
+              ""
+            end
+         end)
+      |> Enum.join("\n")
+
+    Code.eval_string """
+      defmodule Ecto.Schema.Map do
+        #{map}
+      end
+    """  
+  end
 
   ## Callbacks
 
-  def init({repo, _otp_app, adapter, opts}) do
+  def init({repo, otp_app, adapter, opts}) do
     children = [adapter.child_spec(repo, opts)]
     if Keyword.get(opts, :query_cache_owner, true) do
       :ets.new(repo, [:set, :public, :named_table, read_concurrency: true])
     end
+    build_source_map(otp_app)
     supervise(children, strategy: :one_for_one)
   end
 end

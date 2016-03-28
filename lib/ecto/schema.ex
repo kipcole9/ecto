@@ -498,6 +498,7 @@ defmodule Ecto.Schema do
         Ecto.Schema.__changeset__(@changeset_fields),
         Ecto.Schema.__schema__(prefix, source, fields, primary_key_fields),
         Ecto.Schema.__types__(fields),
+        Ecto.Schema.__inherits__(fields),
         Ecto.Schema.__assocs__(assocs),
         Ecto.Schema.__embeds__(embeds),
         Ecto.Schema.__aliases__(@ecto_aliases),
@@ -1859,7 +1860,23 @@ defmodule Ecto.Schema do
       def __schema__(:aliases), do: unquote(Macro.escape(aliases))
     end
   end
+<<<<<<< 4e815ac6747f2e36993beda90f4bac11f5117735
 
+=======
+
+  # We need to find the field index of :_type so that when we're
+  # populating the schema we can quickly establish what the _type
+  # value in the returned row is.  Also acts as a guard to determine
+  # if we need to determine schema type dynamically
+  def __inherits__(fields) do
+    quote do
+      def __schema__(:_type_index) do
+        unquote(_type_index(fields))
+      end
+    end
+  end
+
+>>>>>>> Add Ecto.Query support for inherited tables.  Will determine the appropriate schema module on a per-row basis at query time.
   ## Private
 
   defp association(mod, cardinality, name, association, opts) do
@@ -1989,11 +2006,29 @@ defmodule Ecto.Schema do
     options
   end
 
+  defp includes?(nil, _item) do
+    false
+  end
+
   defp includes?(list, item) when is_tuple(list) do
     {key, _} = list
     key == item
   end
   defp includes?(list, item) do
     item in list
+  end
+
+  # Return the field index of the _type field.  We use this
+  # to index into a retrieved row to establish what the schema
+  # is for a dynamic/polymorphic source.
+  def _type_index(list, n \\ 0)
+  def _type_index([], _n), do: nil
+  def _type_index([head | tail], n) do
+    case head do
+      {:_type, _} ->
+        n
+      {_, _} ->
+        _type_index(tail, n + 1)
+    end
   end
 end
