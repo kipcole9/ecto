@@ -139,6 +139,14 @@ defmodule Ecto.Adapters.SQL do
 
         :ok
       end
+      
+      @doc false
+      defdelegate primary_keys_from(table), to: @conn
+      defdelegate primary_keys_from(prefix, table), to: @conn
+      defdelegate index_definitions_from(table), to: @conn
+      defdelegate index_definitions_from(prefix, table), to: @conn
+      defdelegate trigger_definitions_from(table), to: @conn
+      defdelegate trigger_definitions_from(prefix, table), to: @conn
 
       defoverridable [prepare: 2, execute: 6, insert: 6, update: 6, delete: 4, insert_all: 7,
                       execute_ddl: 3, loaders: 2, dumpers: 2, autogenerate: 1, ensure_all_started: 2]
