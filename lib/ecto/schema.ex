@@ -418,6 +418,7 @@ defmodule Ecto.Schema do
       Module.register_attribute(__MODULE__, :ecto_embeds, accumulate: true)
       Module.register_attribute(__MODULE__, :ecto_raw, accumulate: true)
       Module.register_attribute(__MODULE__, :ecto_aliases, accumulate: true)
+      Module.register_attribute(__MODULE__, :ecto_includes, accumulate: true)
       Module.register_attribute(__MODULE__, :ecto_autogenerate, accumulate: true)
       Module.register_attribute(__MODULE__, :ecto_autoupdate, accumulate: true)
       Module.put_attribute(__MODULE__, :ecto_autogenerate_id, nil)
@@ -502,6 +503,7 @@ defmodule Ecto.Schema do
         Ecto.Schema.__assocs__(assocs),
         Ecto.Schema.__embeds__(embeds),
         Ecto.Schema.__aliases__(@ecto_aliases),
+        Ecto.Schema.__includes__(@ecto_includes),        
         Ecto.Schema.__read_after_writes__(@ecto_raw),
         Ecto.Schema.__autogenerate__(@ecto_autogenerate_id, autogenerate, autoupdate)]
     end
@@ -1787,6 +1789,7 @@ defmodule Ecto.Schema do
   @doc false
   # Copy the field and association definitions from a module
   def __include__(from_module, to_module) do
+    Module.put_attribute(to_module, :ecto_includes, from_module)
     __include__(:fields, from_module, to_module)
     __include__(:associations, from_module, to_module)
   end
@@ -1862,6 +1865,12 @@ defmodule Ecto.Schema do
   def __aliases__(aliases) do
     quote do
       def __schema__(:aliases), do: unquote(Macro.escape(aliases))
+    end
+  end
+
+  def __includes__(includes) do
+    quote do
+      def __schema__(:includes), do: unquote(Macro.escape(includes))
     end
   end
 
