@@ -418,8 +418,8 @@ defmodule Ecto.Schema do
       Module.register_attribute(__MODULE__, :ecto_embeds, accumulate: true)
       Module.register_attribute(__MODULE__, :ecto_raw, accumulate: true)
       Module.register_attribute(__MODULE__, :ecto_aliases, accumulate: true)
-      Module.register_attribute(__MODULE__, :ecto_autogenerate_insert, accumulate: true)
-      Module.register_attribute(__MODULE__, :ecto_autogenerate_update, accumulate: true)
+      Module.register_attribute(__MODULE__, :ecto_autogenerate, accumulate: true)
+      Module.register_attribute(__MODULE__, :ecto_autoupdate, accumulate: true)
       Module.put_attribute(__MODULE__, :ecto_autogenerate_id, nil)
 
     end
