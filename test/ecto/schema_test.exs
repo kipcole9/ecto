@@ -625,12 +625,12 @@ defmodule Ecto.SchemaTest do
     end
   end
   
-  defmodule InheritAssocModel do
+  defmodule InheritAssocSchema do
     use Ecto.Schema
     
     @primary_key false
     schema "stuff" do
-      include AssocModel
+      include AssocSchema
     end
   end
   
@@ -654,15 +654,15 @@ defmodule Ecto.SchemaTest do
   
   @tag :inheritance
   test "confirm associations are copied" do
-    assert InheritAssocModel.__schema__(:associations) == AssocModel.__schema__(:associations)
+    assert InheritAssocSchema.__schema__(:associations) == AssocSchema.__schema__(:associations)
   end
   
   @tag :inheritance
   test "confirm association options are equal" do
-    Enum.each InheritAssocModel.__schema__(:associations), fn
+    Enum.each InheritAssocSchema.__schema__(:associations), fn
       (assoc) ->
-        orig = Map.delete(AssocModel.__schema__(:association, assoc), :owner)
-        inherit = Map.delete(InheritAssocModel.__schema__(:association, assoc), :owner)
+        orig = Map.delete(AssocSchema.__schema__(:association, assoc), :owner)
+        inherit = Map.delete(InheritAssocSchema.__schema__(:association, assoc), :owner)
         assert orig == inherit
     end
   end

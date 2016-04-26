@@ -1791,13 +1791,13 @@ defmodule Ecto.Schema do
     Enum.each(from_module.__schema__(:fields), fn(field) ->
       type = from_module.__schema__(:type, field)
       Ecto.Schema.__field__(to_module, field, type, field_options_for(from_module, field))
-      if auto = List.keyfind(from_module.__schema__(:autogenerate, :insert), field, 0) do
+      if auto = List.keyfind(from_module.__schema__(:autogenerate), field, 0) do
         {_,_,autogen} = auto
-        Module.put_attribute(to_module, :ecto_autogenerate_insert, {field, type, autogen})
+        Module.put_attribute(to_module, :ecto_autogenerate, {field, type, autogen})
       end
-      if auto = List.keyfind(from_module.__schema__(:autogenerate, :update), field, 0) do
+      if auto = List.keyfind(from_module.__schema__(:autoupdate), field, 0) do
         {_,_,autogen} = auto
-        Module.put_attribute(to_module, :ecto_autogenerate_update, {field, type, autogen})
+        Module.put_attribute(to_module, :ecto_autoupdate, {field, type, autogen})
       end
     end)
   end
