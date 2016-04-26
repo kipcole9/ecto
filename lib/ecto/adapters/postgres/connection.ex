@@ -1041,7 +1041,34 @@ if Code.ensure_loaded?(Postgrex) do
         "#{name}.#{quote_name(field)}"
       end
     end
->>>>>>> Adds schema support for inherited tables.
+
+    # Quote a table name for use in metadata look ups where the table name
+    # is part of a predicate
+    defp single_quote(nil, name) do
+      single_quote(name)
+    end
+    defp single_quote(prefix, name) when is_atom(prefix) and is_atom(name) do
+      single_quote(Atom.to_string(prefix), Atom.to_string(name))
+    end
+    defp single_quote(prefix, name) do
+      single_quote(prefix <> "." <> name)
+    end
+    defp single_quote(name) when is_atom(name) do
+      single_quote(Atom.to_string(name))
+    end
+    defp single_quote(name) when is_binary(name) do
+      cond do
+        String.contains?(name, "\"") ->
+          error!(nil, "bad table name #{inspect name}")
+        true ->
+          <<?', name::binary, ?'>>
+      end
+    end
+    defp single_quote(name) when is_list(name) do
+      [table_name | options] = name
+      prefix = Keyword.get(options, :prefix, nil)
+      single_quote(prefix, table_name)
+    end
 
     defp assemble(list) do
       list

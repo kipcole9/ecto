@@ -254,4 +254,22 @@ defmodule Ecto.Adapters.Postgres do
   def supports_inherited_tables? do
     true
   end
+  
+  @doc false
+  def supports_inherited_tables? do
+    true
+  end
+  
+  @doc false
+  def structure_dump(default, config) do
+    path = config[:dump_path] || Path.join(default, "structure.sql")
+    run_with_cmd("pg_dump", config, ["--file", path, "--schema-only", "--no-acl",
+                                     "--no-owner", config[:database]])
+  end
+
+  @doc false
+  def structure_load(default, config) do
+    path = config[:dump_path] || Path.join(default, "structure.sql")
+    run_with_cmd("psql", config, ["--quiet", "--file", path, config[:database]])
+  end
 end
