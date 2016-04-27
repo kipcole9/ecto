@@ -1798,13 +1798,11 @@ defmodule Ecto.Schema do
     Enum.each(from_module.__schema__(:fields), fn(field) ->
       type = from_module.__schema__(:type, field)
       Ecto.Schema.__field__(to_module, field, type, field_options_for(from_module, field))
-      if auto = List.keyfind(from_module.__schema__(:autogenerate), field, 0) do
-        {_,_,autogen} = auto
-        Module.put_attribute(to_module, :ecto_autogenerate, {field, type, autogen})
+      if List.keyfind(from_module.__schema__(:autogenerate), field, 0) do
+        Module.put_attribute(to_module, :ecto_autogenerate, {field, {type, :autogenerate, []}})
       end
-      if auto = List.keyfind(from_module.__schema__(:autoupdate), field, 0) do
-        {_,_,autogen} = auto
-        Module.put_attribute(to_module, :ecto_autoupdate, {field, type, autogen})
+      if List.keyfind(from_module.__schema__(:autoupdate), field, 0) do
+        Module.put_attribute(to_module, :ecto_autoupdate, {field, {type, :autogenerate, []}})
       end
     end)
   end
