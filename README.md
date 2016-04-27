@@ -6,6 +6,19 @@
 Ecto is a domain specific language for writing queries and interacting with databases in Elixir. Here is an example:
 
 ```elixir
+
+# This Fork supports Inherited tables in Postgres
+Use at your own risk, but all Ecto tests are passing so you're probably ok.  But don't use this fork unless you specifically
+want to use inherited tables in Postgres.
+
+This fork supports:
+
+  * Creating inherited tables in migrations
+  * Inheriting tables or including the in your schemas
+  * Querying inherited tables and polymorphically returning the correct schema struct
+  
+See the relevant module (Ecto.Schema, Ecto.Migration) for further information.
+
 # In your config/config.exs file
 config :my_app, ecto_repos: [Sample.Repo]
 
