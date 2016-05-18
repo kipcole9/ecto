@@ -971,7 +971,7 @@ defmodule Ecto.Migration do
   def primary_keys_from(nil), do: []
   def primary_keys_from(table_name) do
     primary_key_query = adapter.primary_keys_from(table_name)
-    {:ok, primary_key_columns} = adapter.query(repo, primary_key_query, [], log: false)
+    {:ok, primary_key_columns} = Ecto.Adapters.SQL.query(repo, primary_key_query, [], log: false)
     primary_key_columns.rows |> List.flatten
   end
 
@@ -980,7 +980,7 @@ defmodule Ecto.Migration do
   """
   def index_definitions_from(inherits) when is_atom(inherits) do
     index_query = adapter.index_definitions_from(inherits)
-    {:ok, index_definitions} = adapter.query(repo, index_query, [], log: false)
+    {:ok, index_definitions} = Ecto.Adapters.SQL.query(repo, index_query, [], log: false)
     index_definitions.rows |> List.flatten
   end
 
@@ -989,7 +989,7 @@ defmodule Ecto.Migration do
 
   def index_definitions_from(prefix, inherits) do
     index_query = adapter.index_definitions_from(prefix, inherits)
-    {:ok, index_definitions} = adapter.query(repo, index_query, [], log: false)
+    {:ok, index_definitions} = Ecto.Adapters.SQL.query(repo, index_query, [], log: false)
     index_definitions.rows |> List.flatten
   end
 
@@ -998,7 +998,7 @@ defmodule Ecto.Migration do
   """
   def trigger_definitions_from(inherits) when is_atom(inherits) do
     trigger_query = adapter.trigger_definitions_from(inherits)
-    {:ok, trigger_definitions} = adapter.query(repo, trigger_query, [], log: false)
+    {:ok, trigger_definitions} = Ecto.Adapters.SQL.query(repo, trigger_query, [], log: false)
     trigger_definitions.rows |> List.flatten
   end
 
@@ -1007,7 +1007,7 @@ defmodule Ecto.Migration do
 
   def trigger_definitions_from(prefix, inherits) do
     trigger_query = adapter.trigger_definitions_from(prefix, inherits)
-    {:ok, trigger_definitions} = adapter.query(repo, trigger_query, [], log: false)
+    {:ok, trigger_definitions} = Ecto.Adapters.SQL.query(repo, trigger_query, [], log: false)
     trigger_definitions.rows |> List.flatten
   end
 end
