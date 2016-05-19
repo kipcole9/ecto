@@ -127,7 +127,7 @@ defmodule Ecto.Repo.Supervisor do
     if Keyword.get(opts, :query_cache_owner, true) do
       :ets.new(repo, [:set, :public, :named_table, read_concurrency: true])
     end
-    build_source_map(otp_app)
+    unless Code.ensure_loaded?(Ecto.Schema.Map), do: build_source_map(otp_app)
     supervise(children, strategy: :one_for_one)
   end
 end
