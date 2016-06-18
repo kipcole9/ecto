@@ -602,6 +602,8 @@ defmodule Ecto.SchemaTest do
           belongs_to name, User, foreign_key: name
         end
       end
+    end
+  end
 
   ## Include, Inherit, Inheritable
 
