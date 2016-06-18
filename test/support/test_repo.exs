@@ -86,14 +86,14 @@ defmodule Ecto.TestAdapter do
     do: send(self(), :delete) && {:ok, []}
 >>>>>>> Adds inherited table support for Ecto migrations.
 
-  def primary_keys_from(table),
-    do: Ecto.Adapters.Postgres.Connection.primary_keys_from(table)
+  def primary_keys_from(_table),
+    do: ["id"]
 
-  def index_definitions_from(table),
-    do: Ecto.Adapters.Postgres.Connection.index_definitions_from(table)
+  def index_definitions_from(_table),
+    do: []
 
-  def trigger_definitions_from(table),
-    do: Ecto.Adapters.Postgres.Connection.trigger_definitions_from(table)
+  def trigger_definitions_from(_table),
+    do: []
 
   ## Transactions
 
