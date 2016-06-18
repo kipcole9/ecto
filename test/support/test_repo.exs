@@ -95,6 +95,15 @@ defmodule Ecto.TestAdapter do
   def trigger_definitions_from(_table),
     do: []
 
+  # def primary_keys_from(table),
+  #   do: Ecto.Adapters.Postgres.Connection.primary_keys_from(table)
+  #
+  # def index_definitions_from(table),
+  #   do: Ecto.Adapters.Postgres.Connection.index_definitions_from(table)
+  #
+  # def trigger_definitions_from(table),
+  #   do: Ecto.Adapters.Postgres.Connection.trigger_definitions_from(table)
+
   ## Transactions
 
   def transaction(_repo, _opts, fun) do
