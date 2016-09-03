@@ -178,6 +178,30 @@ For example:
       end
     end
 
+### Query Support for Inherited Tables
+
+The Ecto query language doesn't change at all however there are some points to understand about what this fork does under the covers:
+
+* It will append a column `_type` to any wildcard query (ie a query that doesn't have a `select()` in it) on an inherited table.  This `_type` column returns the underlying table name of each retrieved row of a query.  This fork of ecto uses the `_type` column to work out which `Ecto.Schemo` should be populated per row.  There's a fair bit of optimization to this process so in testing the performance characteristics change immaterially.  But more benchmarking of this area would be a good idea and certainly its an area to watch.
+
+* If you do your own `select()` to retrieve only some required columns (which is a good practise) then in order for inherited tables to work as polymorphic tables you'll need to make sure you include the `_type` column in the `select()` list yourself.  If you don't include it then all rows will be populated into the schema representing the table you queried.
+
+* The `_type` column is created for each inherited table and is defined as:
+
+    `field :_type, :string,
+      alias_for: fragment("%{table}.\"tableoid\"::regclass::text")`
+
+* This defines the field as being an ecto `fragment()` that retrieves the Postgres OID in text form.  You will see it also adds an option to the `field` macro called `:alias_for`.  This macro can be used in other parts of your `Ecto.Schema` code as well.
+
+### Implementation Details To Consider
+
+One of the most performance sensitive parts of the process is being able to map the `_type` column to an Ecto schema.  There are two considerations:
+
+1. *How to decide which schema to use for a given row.*  This is defined for each schema and is available via a metadata function invoked as `MySchema.__schema__(:source) and if required `MySchema.__schema__(:prefix)`
+
+2. *How to look up the right schema for each row at runtime.*  This is done via a module created at compile time called `Ecto.Schema.Map`. This code is located at `Ecto.Repo.Supervisor.build_source_map/1` and is invoked in `Ecto.Repo.Supervisor.init/4`.  It builds a set of functions that map a `_type` column to the previously defined schema mapping.
+
+
 ## Usage
 
 You need to add both Ecto and the database adapter as a dependency to your `mix.exs` file. The supported databases and their adapters are:
