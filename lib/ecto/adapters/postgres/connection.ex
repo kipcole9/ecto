@@ -593,7 +593,7 @@ if Code.ensure_loaded?(Postgrex) do
     def execute_ddl({command, %Table{}=table, columns}) when command in [:create, :create_if_not_exists] do
       options       = options_expr(table.options)
       if_not_exists = if command == :create_if_not_exists, do: " IF NOT EXISTS", else: ""
-      pk_definition = case pk_definition(columns) do
+      pk_definition = case pk_definition(table, columns) do
         nil -> ""
         pk -> ", #{pk}"
       end
@@ -686,7 +686,7 @@ if Code.ensure_loaded?(Postgrex) do
     def execute_ddl(keyword) when is_list(keyword),
       do: error!(nil, "PostgreSQL adapter does not support keyword lists in execute")
 
-    # Primary key definitions.  If the table is inherited the defailt is to
+    # Primary key definitions.  If the table is inherited the default is to
     # define the primary key as the same columns as the inherited table.
     defp pk_definition(%Table{}=table, columns),
       do: pk_definition(table, table.inherits, columns)
@@ -994,54 +994,6 @@ if Code.ensure_loaded?(Postgrex) do
     end
 
     defp single_quote(value), do: "\'#{escape_string(value)}\'"
-    # Quote a table name for use in metadata look ups where the table name
-    # is part of a predicate
-    defp single_quote(nil, name) do
-      single_quote(name)
-    end
-    defp single_quote(prefix, name) when is_atom(prefix) and is_atom(name) do
-      single_quote(Atom.to_string(prefix), Atom.to_string(name))
-    end
-    defp single_quote(prefix, name) do
-      single_quote(prefix <> "." <> name)
-    end
-    defp single_quote(name) when is_atom(name) do
-      single_quote(Atom.to_string(name))
-    end
-    defp single_quote(name) when is_binary(name) do
-      cond do
-        String.contains?(name, "\"") ->
-          error!(nil, "bad table name #{inspect name}")
-        true ->
-          <<?', name::binary, ?'>>
-      end
-    end
-    defp single_quote(name) when is_list(name) do
-      [table_name | options] = name
-      prefix = Keyword.get(options, :prefix, nil)
-      single_quote(prefix, table_name)
-    end
-
-    defp field_or_alias(field, name, _sources, nil, _query) do
-      "#{name}.#{quote_name(field)}"
-    end
-    defp field_or_alias(field, name, sources, schema, query) do
-      alias Ecto.Query.Builder.Select, as: Builder
-
-      if alias = schema.__schema__(:aliases)[field] do
-        {expr, {params, take}} = Builder.escape(alias, [], __ENV__)
-        if Enum.any?(params), do: raise ArgumentError,
-            "Parameters in a schema column alias are not supported. " <>
-            "Field alias for #{field} found #{inspect params}"
-
-        alias = expr(expr, sources, query)
-        column = "#{alias} AS #{quote_name(field)}"
-        String.replace(column, "%{table}", name)
-      else
-        "#{name}.#{quote_name(field)}"
-      end
-    end
-
     # Quote a table name for use in metadata look ups where the table name
     # is part of a predicate
     defp single_quote(nil, name) do

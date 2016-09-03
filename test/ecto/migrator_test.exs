@@ -70,15 +70,15 @@ defmodule Ecto.MigratorTest do
   defmodule InvalidMigration do
     use Ecto.Migration
   end
-  
+
   defmodule InheritedMigration do
     use Ecto.Migration
-    
+
     def up do
       create table(:things) do
         add :name, :string
       end
-      
+
       create table(:posts, inherits: :things) do
         add :content, :text
       end
@@ -88,15 +88,15 @@ defmodule Ecto.MigratorTest do
       execute "foo"
     end
   end
-  
+
   defmodule InheritedMigrationNoTriggers do
     use Ecto.Migration
-    
+
     def up do
       create table(:things) do
         add :name, :string
       end
-      
+
       create table(:posts, inherits: [:things, triggers: false]) do
         add :content, :text
       end
@@ -106,15 +106,15 @@ defmodule Ecto.MigratorTest do
       execute "foo"
     end
   end
-  
+
   defmodule InheritedMigrationNoIndexes do
     use Ecto.Migration
-    
+
     def up do
       create table(:things) do
         add :name, :string
       end
-      
+
       create table(:posts, inherits: [:things, indexes: false]) do
         add :content, :text
       end
@@ -194,11 +194,11 @@ defmodule Ecto.MigratorTest do
     assert output =~ "execute \"foo\""
     assert output =~ ~r"== Migrated in \d.\ds"
   end
-  
+
   @tag :inheritance
   test "inherits table and sets primary key" do
     output = capture_log fn ->
-      adapter_supports_inherited_tables!
+      adapter_supports_inherited_tables!()
       :ok = up(TestRepo, 0, InheritedMigration)
     end
 
@@ -212,11 +212,11 @@ defmodule Ecto.MigratorTest do
       FOR EACH ROW EXECUTE PROCEDURE things_search_trigger()"
     """ |> remove_newlines
   end
-  
+
   @tag :inheritance
   test "inherits table but doesn't cascade triggers" do
     output = capture_log fn ->
-      adapter_supports_inherited_tables!
+      adapter_supports_inherited_tables!()
       :ok = up(TestRepo, 0, InheritedMigrationNoTriggers)
     end
 
@@ -230,11 +230,11 @@ defmodule Ecto.MigratorTest do
       FOR EACH ROW EXECUTE PROCEDURE things_search_trigger()"
     """ |> remove_newlines
   end
-  
+
   @tag :inheritance
   test "inherits table but doesn't cascade indexes" do
     output = capture_log fn ->
-      adapter_supports_inherited_tables!
+      adapter_supports_inherited_tables!()
       :ok = up(TestRepo, 0, InheritedMigrationNoIndexes)
     end
 
@@ -248,12 +248,12 @@ defmodule Ecto.MigratorTest do
       FOR EACH ROW EXECUTE PROCEDURE things_search_trigger()"
     """ |> remove_newlines
   end
-  
+
   @tag :inheritance
   test "can't inherit if adapter doesn't support it" do
     capture_log fn ->
       assert_raise Ecto.MigrationError, fn ->
-      adapter_doesnt_support_inherited_tables!
+        adapter_doesnt_support_inherited_tables!()
         :ok = up(TestRepo, 0, InheritedMigration)
       end
     end
@@ -450,15 +450,15 @@ defmodule Ecto.MigratorTest do
     end
     """
   end
-  
+
   defp remove_newlines(string) do
     string |> String.strip |> String.replace("\n", " ") |> String.replace(~r" +"," ")
   end
-  
+
   defp adapter_supports_inherited_tables! do
     Process.put(:supports_inherited_tables?, true)
   end
-  
+
   defp adapter_doesnt_support_inherited_tables! do
     Process.put(:supports_inherited_tables?, false)
   end
