@@ -70,6 +70,114 @@ end
 
 See the [getting started guide](http://hexdocs.pm/ecto/getting-started.html) and the [online documentation](http://hexdocs.pm/ecto).
 
+## Included and Inherited Tables
+
+### Inclusion
+
+Any schema module may copy the fields and associations from another module
+by `include`-ing it in another schema.  Since this is a copy of the
+definitions it will include any primary keys set on the included module
+and hence it is likely you will want to set `@primary_key false` for the
+including module to prevent errors.
+
+For example:
+
+    # Defines a schema with the default primary key
+    # definition
+    defmodule Contact do
+      use Ecto.Schema
+
+      schema "contacts" do
+        field :name, :string
+        has_many :comments, Comment
+      end
+    end
+
+    # Defines a schema that will copy the fields
+    # and associations from Contact into Person.
+    # Note we set @primary_key to false since the
+    # `id` field will be copied from the Contact
+    # module.
+    @primary_key false
+    defmodule Person do
+      use Ecto.Schema
+
+      schema "people" do
+        include Contact
+        field :age, :integer, default: 0
+      end
+    end
+
+    # Also copies the field and association definitions
+    # from Contact.
+    @primary_key false
+    defmodule Organization do
+      use Ecto.Schema
+
+      schema "organizations" do
+        include Contact
+        field :revenue, :integer
+      end
+    end
+
+### Inheritance
+
+Schema inheritance has two elements that, together, support inherited
+tables on supported adapters (currently only Postgres).
+
+First we declare a schema to be `inheritable`.  This macro creates a
+field called `_type` which is used at runtime to discriminate a row retrieved
+in a query and to determine which table it is derived from and therefore which
+schema should be populated for that row.  This is a form of polymorphism but
+limited to the case of inherited tables.
+
+Secondly, we `inherit` a schema from an `inheritable` one (or from another schema that itself inherits from an `inheritable` one).
+
+For example:
+
+    # Defines a schema to be inheritable. This creates a field
+    # called _type that is used at runtime to discriminate amongst
+    # rows retrieved from different inherited tables.
+    defmodule Contact do
+      use Ecto.Schema
+
+      schema "contacts" do
+        inheritable()
+        field :name, :string
+        has_many :comments, Comment
+      end
+    end
+
+    # Defines a schema that inherits from Contact.
+    # Note that inherit is exactly the same as include
+    # but named to better express intent.  The key is
+    # that it inherits (or includes) from a schema
+    # marked as inheritable.  We set @primary_key false
+    # because we'll inherit the primary key from the
+    # parent table.
+    @primary_key false
+    defmodule Person do
+      use Ecto.Schema
+
+      schema "people" do
+        inherit Contact
+        field :age, :integer, default: 0
+      end
+    end
+
+    # include is the same as inherit and will therefore
+    # also demonstrate the same behaviour at runtime since
+    # the Contact schema is marked as inheritable.
+    @primary_key false
+    defmodule Organization do
+      use Ecto.Schema
+
+      schema "organizations" do
+        include Contact
+        field :revenue, :integer
+      end
+    end
+
 ## Usage
 
 You need to add both Ecto and the database adapter as a dependency to your `mix.exs` file. The supported databases and their adapters are:
