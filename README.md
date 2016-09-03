@@ -17,6 +17,7 @@ See the relevant module (Ecto.Schema, Ecto.Migration) for further information.
 
 Ecto is a domain specific language for writing queries and interacting with databases in Elixir. Here is an example:
 
+```elixir
 # In your config/config.exs file
 config :my_app, ecto_repos: [Sample.Repo]
 
