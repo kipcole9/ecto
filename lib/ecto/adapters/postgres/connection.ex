@@ -746,10 +746,7 @@ if Code.ensure_loaded?(Postgrex) do
         _ -> ""
       end)
       |> Enum.filter(fn(value) -> value != "" end)
-
-    defp prepend_comma_if_columns(pk_def, []), do: pk_def
-    defp prepend_comma_if_columns("" = pk_def, _columns), do: pk_def
-    defp prepend_comma_if_columns(pk_def, _columns), do: ", " <> pk_def
+    end
 
     defp inherited_primary_keys(%Table{}=table) do
       Enum.map(table.inherited_primary_keys, fn (y) -> {:add, y, nil, [primary_key: true]} end)
@@ -993,7 +990,6 @@ if Code.ensure_loaded?(Postgrex) do
       end
     end
 
-    defp single_quote(value), do: "\'#{escape_string(value)}\'"
     # Quote a table name for use in metadata look ups where the table name
     # is part of a predicate
     defp single_quote(nil, name) do
